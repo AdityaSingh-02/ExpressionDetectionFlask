@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Classification Demo</title>
+</head>
+<body>
+    <h1>Image Classification Demo</h1>
+    <form method="post" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <br><br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
