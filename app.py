@@ -6,23 +6,27 @@ import tensorflow as tf
 import requests
 from PIL import Image
 from io import BytesIO
+import tensorflow_hub as hub
 
-model = keras.models.load_model('keras_model.h5')
+def load_model(model_path):
+  print(f"Loading Saved Model From: {model_path}")
+  model = tf.keras.models.load_model(model_path,
+                                     custom_objects = {"KerasLayer": hub.KerasLayer})
+  return model
 
-# Define model and image parameters
-class_names = ['Surprise', 'Sad','Neutral','Happy', 'Angry', ]
+model1 = load_model("brain.h5")
+model2 = load_model("pneumonia.h5")
+
+
 pic_size = 224
 
-
-# Initialize Flask app
 app = Flask(__name__)
 
 
+
 # Define prediction route
-@app.route('/predict/<path:img_url>', methods=['POST', 'GET'])
-def predict(img_url):
-    # Get image file from request
-    # img_file = request.files['image']
+@app.route('/api/tumor/<path:img_url>', methods=['POST', 'GET'])
+def tumor(img_url):
     fetched_Image = img_url
     response = requests.get(fetched_Image)
     image = Image.open(BytesIO(response.content))
@@ -31,39 +35,30 @@ def predict(img_url):
         image = tf.keras.preprocessing.image.img_to_array(image)
         image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
 
-        prediction = model.predict(tf.expand_dims(image, axis=0))
-        expression = ['Surprise', 'Sad','Neutral','Happy', 'Angry', ][prediction.argmax()]
+        prediction = model1.predict(tf.expand_dims(image, axis=0))
+        expression = ['no_tumor', 'meningioma_tumor','Glioma_tumor','pituitary_tumor' ][prediction.argmax()]
         return jsonify({'expression': expression})
     else:
         return "Failure"
 
-        
-    # print(type(img_file))
 
-    # # Read image file as numpy array
-    # img = cv2.imdecode(np.frombuffer(fetched_Image.read(), np.uint8), cv2.IMREAD_COLOR)
-    # print(type(img))
-    # print(img.shape)
+@app.route('/api/pneumonia/<path:img_url>', methods=['POST', 'GET'])
+def pneumonia(img_url):
+    fetched_Image = img_url
+    response = requests.get(fetched_Image)
+    image = Image.open(BytesIO(response.content))
+    if response.status_code == 200:
+        image = image.resize((224, 224))
+        image = tf.keras.preprocessing.image.img_to_array(image)
+        image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
+
+        prediction = model2.predict(tf.expand_dims(image, axis=0))
+        expression = ['no pneumonia','pneumonia'][prediction.argmax()]
+        return jsonify({'expression': expression})
+    else:
+        return "Failure"
 
 
-    # img = image.resize(img,(pic_size, pic_size))
-    # # print(img.shape)
-    # img = img[np.newaxis, ...]  # add channel dimension
-    # # print(img.shape)
-    # img = img.astype('float32') / 255.0  # normalize pixel values
-    # # print(img.shape)
-
-
-    # # Make prediction
-    # pred = model.predict(img)
-
-    # # Get predicted class name
-    # class_idx = np.argmax(pred)
-    # class_name = class_names[class_idx]
-
-    # # Return prediction as JSON response
-
-    # return jsonify({'class': class_name })
 
 
 # Define home page route
