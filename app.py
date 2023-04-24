@@ -4,9 +4,11 @@ import numpy as np
 import cv2
 import tensorflow as tf
 import requests
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 import tensorflow_hub as hub
+import base64
+import io
 
 def load_model(model_path):
   print(f"Loading Saved Model From: {model_path}")
@@ -25,41 +27,53 @@ app = Flask(__name__)
 
 
 # Define prediction route
-@app.route('/api/tumor/<path:img_url>', methods=['POST', 'GET'])
-def tumor(img_url):
-    fetched_Image = img_url
-    response = requests.get(fetched_Image)
-    image = Image.open(BytesIO(response.content))
-    if response.status_code == 200:
-        image = image.resize((224, 224))
-        image = tf.keras.preprocessing.image.img_to_array(image)
-        image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
+# @app.route('/api/tumor/<path:img_url>', methods=['POST', 'GET'])
+# def tumor(img_url):
+#     fetched_Image = img_url
+#     response = requests.get(fetched_Image)
+#     image = Image.open(BytesIO(response.content))
+#     if response.status_code == 200:
+#         image = image.resize((224, 224))
+#         image = tf.keras.preprocessing.image.img_to_array(image)
+#         image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
 
-        prediction = model1.predict(tf.expand_dims(image, axis=0))
-        expression = ['no_tumor', 'meningioma_tumor','Glioma_tumor','pituitary_tumor' ][prediction.argmax()]
-        return jsonify({'expression': expression})
-    else:
-        return "Failure"
-
-
-@app.route('/api/pneumonia/<path:img_url>', methods=['POST', 'GET'])
-def pneumonia(img_url):
-    fetched_Image = img_url
-    response = requests.get(fetched_Image)
-    image = Image.open(BytesIO(response.content))
-    if response.status_code == 200:
-        image = image.resize((224, 224))
-        image = tf.keras.preprocessing.image.img_to_array(image)
-        image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
-
-        prediction = model2.predict(tf.expand_dims(image, axis=0))
-        expression = ['no pneumonia','pneumonia'][prediction.argmax()]
-        return jsonify({'expression': expression})
-    else:
-        return "Failure"
+#         prediction = model1.predict(tf.expand_dims(image, axis=0))
+#         expression = ['no_tumor', 'meningioma_tumor','Glioma_tumor','pituitary_tumor' ][prediction.argmax()]
+#         return jsonify({'expression': expression})
+#     else:
+#         return "Failure"
 
 
+# @app.route('/api/pneumonia/<path:img_url>', methods=['POST', 'GET'])
+# def pneumonia(img_url):
+#     fetched_Image = img_url
+#     response = requests.get(fetched_Image)
+#     image = Image.open(BytesIO(response.content))
+#     if response.status_code == 200:
+#         image = image.resize((224, 224))
+#         image = tf.keras.preprocessing.image.img_to_array(image)
+#         image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
 
+#         prediction = model2.predict(tf.expand_dims(image, axis=0))
+#         expression = ['no pneumonia','pneumonia'][prediction.argmax()]
+#         return jsonify({'expression': expression})
+#     else:
+#         return "Failure"
+
+@app.route('/uploads', methods=['POST'])
+def uploads():
+    data = request.get_json()
+    image_str = data['image_rec']
+    num_padding_chars = 4 - len(image_str) % 4
+    image_str += "=" * num_padding_chars
+    image_bytes = base64.b64decode(image_str)
+    image = Image.open(io.BytesIO(image_bytes))
+    # image = image.resize((224, 224))
+    image = tf.keras.preprocessing.image.img_to_array(image)
+    image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
+    prediction = model2.predict(tf.expand_dims(image, axis=0))
+    expression = ['no pneumonia','pneumonia'][prediction.argmax()]
+    return jsonify({'expression': expression})
 
 # Define home page route
 @app.route('/')
@@ -68,4 +82,5 @@ def home():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
+
