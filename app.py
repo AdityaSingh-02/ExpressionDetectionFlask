@@ -19,6 +19,8 @@ def load_model(model_path):
 
 model1 = load_model("brain.h5")
 model2 = load_model("pneumonia.h5")
+model3 = load_model("skin.h5")
+model4 = load_model("retina.h5")
 
 
 pic_size = 224
@@ -59,6 +61,48 @@ def Mri():
     label = ['no_tumor', 'meningioma_tumor','Glioma_tumor','pituitary_tumor' ]
     return prepare_detail(image,model1,label)
 
+
+@app.route('/Infection', methods=['POST'])
+def infection():
+    data = request.get_json()
+    image_str = data['image_rec']
+    num_padding_chars = 4 - len(image_str) % 4
+    image_str += "=" * num_padding_chars
+    image_bytes = base64.b64decode(image_str)
+    image = Image.open(io.BytesIO(image_bytes))
+    label = ['Light Diseases and Disorders of Pigmentation','Lupus and other Connective Tissue diseases','Acne and Rosacea Photos','Systemic Disease',
+ 'Poison Ivy Photos and other Contact Dermatitis',
+ 'Vascular Tumors',
+ 'Urticaria Hives',
+ 'Atopic Dermatitis Photos',
+ 'Bullous Disease Photos',
+ 'Hair Loss Photos Alopecia and other Hair Diseases',
+ 'Tinea Ringworm Candidiasis and other Fungal Infections',
+ 'Psoriasis pictures Lichen Planus and related diseases',
+ 'Melanoma Skin Cancer Nevi and Moles',
+ 'Nail Fungus and other Nail Disease',
+ 'Scabies Lyme Disease and other Infestations and Bites',
+ 'Eczema Photos',
+ 'Exanthems and Drug Eruptions',
+ 'Herpes HPV and other STDs Photos',
+ 'Seborrheic Keratoses and other Benign Tumors',
+ 'Actinic Keratosis Basal Cell Carcinoma and other Malignant Lesions',
+ 'Vasculitis Photos',
+ 'Cellulitis Impetigo and other Bacterial Infections',
+ 'Warts Molluscum and other Viral Infections']
+    return prepare_detail(image,model3,label)
+
+
+@app.route('/Retina', methods=['POST'])
+def Retina():
+    data = request.get_json()
+    image_str = data['image_rec']
+    num_padding_chars = 4 - len(image_str) % 4
+    image_str += "=" * num_padding_chars
+    image_bytes = base64.b64decode(image_str)
+    image = Image.open(io.BytesIO(image_bytes))
+    label = ['NO_DR', 'Mild','Moderate','Severe','Proliferate_DR' ]
+    return prepare_detail(image,model4,label)
 
 # Define home page route
 @app.route('/')
